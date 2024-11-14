@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+
+body{
+    font-family: "Roboto Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+    margin: 0;
+    overflow: hidden;
+}
+
+#header{
+    padding: 10px;
+    margin: 0;
+    height: fit-content;
+    background-color: rgb(111, 111, 111);
+}
+
+#confirmbutton{
+    display: block;
+    bottom: 0;
+}
+
+#top20{
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.track-item{
+    width: 20%;
+    display: inline-block;
+    border-radius: 15px;
+    background-color: rgb(111, 111, 111);
+    padding: 10px;
+    margin: 5px;
+    overflow-x: scroll;
+}
+
+.artist-item{
+    width: 20%;
+    display: inline-block;
+    border-radius: 15px;
+    background-color: rgb(111, 111, 111);
+    padding: 10px;
+    margin: 5px;
+}

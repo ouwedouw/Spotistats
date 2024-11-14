@@ -10,17 +10,35 @@ function processFiles() {
     let combinedData = [];
     let filesProcessed = 0;
 
+    // Gebruik Array.from() om de FileList naar een array om te zetten
     Array.from(files).forEach(file => {
         const reader = new FileReader();
+        
         reader.onload = function(event) {
             try {
+                // Probeer het JSON-bestand te parsen
                 const jsonContent = JSON.parse(event.target.result);
-                combinedData = combinedData.concat(jsonContent);
+                
+                // Controleer of het een array of object is, en voeg correct toe
+                if (Array.isArray(jsonContent)) {
+                    combinedData = combinedData.concat(jsonContent);
+                } else if (typeof jsonContent === 'object' && jsonContent !== null) {
+                    combinedData.push(jsonContent);
+                } else {
+                    throw new Error('Unexpected JSON structure');
+                }
+
                 filesProcessed++;
 
+                // Zodra alle bestanden verwerkt zijn, voer de bewerkingen uit
                 if (filesProcessed === files.length) {
-                    const processedData = manipulateJSON(combinedData);
-                    console.log('Top 20 Songs:', processedData);
+                    try {
+                        JSONSongs(combinedData);
+                        JSONArtists(combinedData);
+                    } catch (processingError) {
+                        console.error('Error processing the combined JSON data:', processingError);
+                        alert('Error processing combined data.');
+                    }
                 }
             } catch (error) {
                 console.error('Error parsing JSON from file', file.name, error);
@@ -29,14 +47,15 @@ function processFiles() {
         };
 
         reader.onerror = function() {
-            alert('Error reading the file.');
+            console.error('Error reading the file:', file.name);
+            alert(`Error reading the file: ${file.name}`);
         };
 
         reader.readAsText(file);
     });
 }
 
-function manipulateJSON(jsonData) {
+function JSONSongs(jsonData) {
     const songTotals = {};
 
     jsonData.forEach(item => {
@@ -78,13 +97,56 @@ function manipulateJSON(jsonData) {
         song.formattedPlayTime = formattedTime; // Add formatted playtime to each song
     });
 
-    printTop20(top20Songs);
-    return top20Songs;
+    top20SongPrint(top20Songs);
 }
 
-function printTop20(top20Songs){
+function JSONArtists(jsonData) {
+    const artistTotals = {};
+
+    jsonData.forEach(item => {
+        const artistName = item.artistName || item.master_metadata_album_artist_name;
+        const msPlayed = item.msPlayed || item.ms_played;
+
+        if (typeof msPlayed !== 'number' || isNaN(msPlayed) || msPlayed < 0) {
+            return;
+        }        
+
+        if (artistName === null) {
+            return; // Skip this song
+        }
+
+        const artistKey = `${artistName}`;
+
+        if (artistTotals[artistKey]) {
+            artistTotals[artistKey].totalMsPlayed += msPlayed;
+        } else {
+            artistTotals[artistKey] = {
+                artistName: artistName,
+                totalMsPlayed: msPlayed
+            };
+        }
+    });
+
+    const sortedArtists = Object.values(artistTotals).sort((a, b) => {
+        return b.totalMsPlayed - a.totalMsPlayed;
+    });
+
+    const top20Artists = sortedArtists.slice(0, 20);
+
+    top20Artists.forEach(artist => {
+        const minutes = Math.floor(artist.totalMsPlayed / 60000);
+        const seconds = Math.floor((artist.totalMsPlayed % 60000) / 1000);
+        const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        artist.formattedPlayTime = formattedTime;
+    });
+
+    top20ArtistPrint(top20Artists);
+}
+
+function top20SongPrint(top20Songs){
     const tracks = top20Songs;
-    const trackList = document.getElementById('top20');
+    const trackList = document.getElementById('top20Songs');
 
     tracks.forEach(track => {
         // Create a container for each track
@@ -93,11 +155,32 @@ function printTop20(top20Songs){
 
         // Create HTML content
         trackDiv.innerHTML = `
-            <h3>${track.trackName} by ${track.artistName}</h3>
+            <div id="title">${track.trackName}</div>
+            <p>${track.artistName}</p>
             <p>Total Played Time: ${track.formattedPlayTime}</p>
         `;
 
         // Append the element to the container
         trackList.appendChild(trackDiv);
+    });
+}
+
+function top20ArtistPrint(top20Artists){
+    const artists = top20Artists;
+    const artistList = document.getElementById('top20Artists');
+
+    artists.forEach(artist => {
+        // Create a container for each track
+        const artistDiv = document.createElement('div');
+        artistDiv.classList.add('artist-item'); // Add a class for styling if needed
+
+        // Create HTML content
+        artistDiv.innerHTML = `
+            <div id="title">${artist.artistName}</div>
+            <p>Total Played Time: ${artist.formattedPlayTime}</p>
+        `;
+
+        // Append the element to the container
+        artistList.appendChild(artistDiv);
     });
 }
