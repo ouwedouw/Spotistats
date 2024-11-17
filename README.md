@@ -7,7 +7,7 @@
 
  ## Wat moet het kunnen?
  
- 1. Top 20 liedjes tonen met totale luisterduu
+ 1. Top 20 liedjes tonen met totale luisterduur
  2. Top 20 artiesten tonen met totale luisterduur
  3. De eindresultaten moeten downloadbaar zijn.
  4. De totale luisterduur moet getoond kunnen worden.
