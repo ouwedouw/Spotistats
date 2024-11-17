@@ -35,6 +35,7 @@ function processFiles() {
                     try {
                         JSONSongs(combinedData);
                         JSONArtists(combinedData);
+                        totalTime(combinedData);
                     } catch (processingError) {
                         console.error('Error processing the combined JSON data:', processingError);
                         alert('Error processing combined data.');
@@ -98,6 +99,31 @@ function JSONSongs(jsonData) {
     });
 
     top20SongPrint(top20Songs);
+}
+
+function totalTime(jsonData) {
+    let totalTime = 0;
+
+    jsonData.forEach(item => {
+        const trackName = item.trackName || item.master_metadata_track_name;
+        const artistName = item.artistName || item.master_metadata_album_artist_name;
+        let msPlayed = item.msPlayed || item.ms_played;
+
+        if (trackName === null || artistName === null || msPlayed === undefined) {
+            return; // Skip this song
+        }
+
+        totalTime += msPlayed;
+    });
+
+    // Convert msPlayed to minutes:seconds for each song
+    const minutes = Math.floor(totalTime / 60000);
+    const seconds = Math.floor((totalTime % 60000) / 1000);
+    const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    console.log(formattedTime);
+    timeDiv = document.getElementById("totalTime");
+    timeDiv.innerHTML = "Total time listened: " + formattedTime;
 }
 
 function JSONArtists(jsonData) {
