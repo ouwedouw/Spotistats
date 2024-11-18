@@ -33,9 +33,7 @@ function processFiles() {
                 // Zodra alle bestanden verwerkt zijn, voer de bewerkingen uit
                 if (filesProcessed === files.length) {
                     try {
-                        JSONSongs(combinedData);
-                        JSONArtists(combinedData);
-                        totalTime(combinedData);
+                        processJSON(combinedData);
                     } catch (processingError) {
                         console.error('Error processing the combined JSON data:', processingError);
                         alert('Error processing combined data.');
@@ -56,19 +54,31 @@ function processFiles() {
     });
 }
 
-function JSONSongs(jsonData) {
+function processJSON(jsonData) {
+    const artistTotals = {};
     const songTotals = {};
+    let totalTime = 0;
 
     jsonData.forEach(item => {
         const trackName = item.trackName || item.master_metadata_track_name;
         const artistName = item.artistName || item.master_metadata_album_artist_name;
         const msPlayed = item.msPlayed || item.ms_played;
 
-        if (trackName === null || artistName === null) {
+        if (trackName === null || artistName === null || msPlayed === undefined) {
             return; // Skip this song
         }
 
+        const artistKey = `${artistName}`;
         const songKey = `${artistName} - ${trackName}`;
+
+        if (artistTotals[artistKey]) {
+            artistTotals[artistKey].totalMsPlayed += msPlayed;
+        } else {
+            artistTotals[artistKey] = {
+                artistName: artistName,
+                totalMsPlayed: msPlayed
+            };
+        }
 
         if (songTotals[songKey]) {
             songTotals[songKey].totalMsPlayed += msPlayed;
@@ -79,84 +89,19 @@ function JSONSongs(jsonData) {
                 totalMsPlayed: msPlayed
             };
         }
-    });
-
-    // Sort the songs by totalMsPlayed in descending order
-    const sortedSongs = Object.values(songTotals).sort((a, b) => {
-        return b.totalMsPlayed - a.totalMsPlayed;
-    });
-
-    // Limit to the top 20 songs
-    const top20Songs = sortedSongs.slice(0, 20);
-
-    // Convert msPlayed to minutes:seconds for each song
-    top20Songs.forEach(song => {
-        const minutes = Math.floor(song.totalMsPlayed / 60000);
-        const seconds = Math.floor((song.totalMsPlayed % 60000) / 1000);
-        const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-        song.formattedPlayTime = formattedTime; // Add formatted playtime to each song
-    });
-
-    top20SongPrint(top20Songs);
-}
-
-function totalTime(jsonData) {
-    let totalTime = 0;
-
-    jsonData.forEach(item => {
-        const trackName = item.trackName || item.master_metadata_track_name;
-        const artistName = item.artistName || item.master_metadata_album_artist_name;
-        let msPlayed = item.msPlayed || item.ms_played;
-
-        if (trackName === null || artistName === null || msPlayed === undefined) {
-            return; // Skip this song
-        }
 
         totalTime += msPlayed;
-    });
-
-    // Convert msPlayed to minutes:seconds for each song
-    const minutes = Math.floor(totalTime / 60000);
-    const seconds = Math.floor((totalTime % 60000) / 1000);
-    const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-    console.log(formattedTime);
-    timeDiv = document.getElementById("totalTime");
-    timeDiv.innerHTML = "Total time listened: " + formattedTime;
-}
-
-function JSONArtists(jsonData) {
-    const artistTotals = {};
-
-    jsonData.forEach(item => {
-        const artistName = item.artistName || item.master_metadata_album_artist_name;
-        const msPlayed = item.msPlayed || item.ms_played;
-
-        if (typeof msPlayed !== 'number' || isNaN(msPlayed) || msPlayed < 0) {
-            return;
-        }        
-
-        if (artistName === null) {
-            return; // Skip this song
-        }
-
-        const artistKey = `${artistName}`;
-
-        if (artistTotals[artistKey]) {
-            artistTotals[artistKey].totalMsPlayed += msPlayed;
-        } else {
-            artistTotals[artistKey] = {
-                artistName: artistName,
-                totalMsPlayed: msPlayed
-            };
-        }
     });
 
     const sortedArtists = Object.values(artistTotals).sort((a, b) => {
         return b.totalMsPlayed - a.totalMsPlayed;
     });
 
+    const sortedSongs = Object.values(songTotals).sort((a, b) => {
+        return b.totalMsPlayed - a.totalMsPlayed;
+    });
+
+    const top20Songs = sortedSongs.slice(0, 20);
     const top20Artists = sortedArtists.slice(0, 20);
 
     top20Artists.forEach(artist => {
@@ -167,6 +112,22 @@ function JSONArtists(jsonData) {
         artist.formattedPlayTime = formattedTime;
     });
 
+    top20Songs.forEach(song => {
+        const minutes = Math.floor(song.totalMsPlayed / 60000);
+        const seconds = Math.floor((song.totalMsPlayed % 60000) / 1000);
+        const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        song.formattedPlayTime = formattedTime; // Add formatted playtime to each song
+    });
+
+    const totminutes = Math.floor(totalTime / 60000);
+    const totseconds = Math.floor((totalTime % 60000) / 1000);
+    const totformattedTime = `${totminutes}:${totseconds.toString().padStart(2, '0')}`;
+
+    timeDiv = document.getElementById("totalTime");
+    timeDiv.innerHTML = "Total time listened: " + totformattedTime;
+
+    top20SongPrint(top20Songs);
     top20ArtistPrint(top20Artists);
 }
 
